@@ -2,37 +2,51 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>🍉 スイカゲーム</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
 <style>
-* { margin: 0; padding: 0; box-sizing: border-box; }
-body {
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+html, body {
+    height: 100%;
+    overflow: hidden;
     background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    user-select: none;
+    color: white;
+}
+
+/* ── デスクトップ ── */
+body {
     display: flex;
     justify-content: center;
     align-items: center;
-    min-height: 100vh;
-    font-family: 'Helvetica Neue', Arial, sans-serif;
-    user-select: none;
 }
-#wrapper {
+
+#desktopWrapper {
     display: flex;
     gap: 18px;
     align-items: flex-start;
 }
+
 #gameCanvas {
     border-radius: 14px;
     cursor: crosshair;
     display: block;
-    box-shadow: 0 0 40px rgba(46, 204, 113, 0.2), 0 20px 60px rgba(0,0,0,0.5);
+    box-shadow: 0 0 40px rgba(46,204,113,0.2), 0 20px 60px rgba(0,0,0,0.5);
+    touch-action: none;
 }
+
 #sidebar {
     width: 160px;
     display: flex;
     flex-direction: column;
     gap: 12px;
 }
+
 .card {
     background: rgba(255,255,255,0.06);
     backdrop-filter: blur(10px);
@@ -40,7 +54,6 @@ body {
     border-radius: 14px;
     padding: 16px;
     text-align: center;
-    color: white;
 }
 .card-label {
     font-size: 11px;
@@ -50,36 +63,64 @@ body {
     margin-bottom: 6px;
 }
 .card-value {
-    font-size: 30px;
+    font-size: 28px;
     font-weight: 800;
-    color: #fff;
-    line-height: 1;
 }
 #nextCanvas { display: block; margin: 10px auto 0; }
-.fruit-guide {
+
+.fruit-guide { display: flex; flex-direction: column; gap: 5px; padding: 4px 0; }
+.fruit-row { display: flex; align-items: center; gap: 8px; font-size: 12px; color: rgba(255,255,255,0.65); }
+.fruit-dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
+.fruit-score { margin-left: auto; color: rgba(255,255,255,0.35); font-size: 10px; }
+
+/* ── モバイルヘッダー（スマホ専用） ── */
+#mobileHeader {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 10;
+    padding: env(safe-area-inset-top, 8px) 12px 8px;
+    background: rgba(16,21,46,0.85);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+    align-items: center;
+    gap: 10px;
+}
+.mh-block {
+    flex: 1;
+    text-align: center;
+}
+.mh-label {
+    font-size: 10px;
+    color: rgba(255,255,255,0.4);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+.mh-value {
+    font-size: 22px;
+    font-weight: 800;
+    line-height: 1.1;
+}
+#mobileNextWrap {
     display: flex;
     flex-direction: column;
-    gap: 5px;
-    padding: 4px 0;
-}
-.fruit-row {
-    display: flex;
     align-items: center;
-    gap: 8px;
-    font-size: 12px;
-    color: rgba(255,255,255,0.65);
+    gap: 2px;
 }
-.fruit-dot {
-    width: 12px;
-    height: 12px;
-    border-radius: 50%;
-    flex-shrink: 0;
+#mobileNextLabel { font-size: 10px; color: rgba(255,255,255,0.4); letter-spacing: 1px; text-transform: uppercase; }
+#mobileNextCanvas { display: block; }
+
+/* ── モバイル専用レイアウト ── */
+#mobileWrapper {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    height: 100%;
 }
-.fruit-score {
-    margin-left: auto;
-    color: rgba(255,255,255,0.35);
-    font-size: 10px;
-}
+
+/* ── ゲームオーバー ── */
 #overlay {
     display: none;
     position: fixed;
@@ -95,37 +136,35 @@ body {
     background: linear-gradient(135deg, #1a1a2e, #16213e);
     border: 2px solid rgba(231,76,60,0.6);
     border-radius: 24px;
-    padding: 44px 40px;
+    padding: 40px 36px;
     text-align: center;
-    color: white;
-    min-width: 280px;
+    min-width: 260px;
     box-shadow: 0 0 60px rgba(231,76,60,0.3);
 }
-.modal h2 { font-size: 38px; margin-bottom: 6px; }
+.modal h2 { font-size: 34px; margin-bottom: 6px; }
 .modal .sub { color: rgba(255,255,255,0.45); font-size: 13px; margin-bottom: 4px; }
-.modal .final-score { font-size: 56px; font-weight: 900; margin: 8px 0 28px; color: #f1c40f; }
+.modal .final-score { font-size: 52px; font-weight: 900; margin: 8px 0 24px; color: #f1c40f; }
 .btn {
     background: linear-gradient(135deg, #e74c3c, #c0392b);
     color: white;
     border: none;
-    padding: 15px 0;
+    padding: 14px 0;
     border-radius: 12px;
     font-size: 17px;
     font-weight: 700;
     cursor: pointer;
     width: 100%;
     transition: all 0.2s;
-    letter-spacing: 0.5px;
 }
 .btn:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(231,76,60,0.4); }
-.btn:active { transform: translateY(0); }
+.btn:active { transform: scale(0.97); }
 </style>
 </head>
 <body>
 
-<div id="wrapper">
+<!-- デスクトップ -->
+<div id="desktopWrapper">
     <canvas id="gameCanvas"></canvas>
-
     <div id="sidebar">
         <div class="card">
             <div class="card-label">スコア</div>
@@ -146,6 +185,23 @@ body {
     </div>
 </div>
 
+<!-- スマホ用ヘッダー -->
+<div id="mobileHeader">
+    <div class="mh-block">
+        <div class="mh-label">スコア</div>
+        <div class="mh-value" id="mScoreEl">0</div>
+    </div>
+    <div id="mobileNextWrap">
+        <div id="mobileNextLabel">次</div>
+        <canvas id="mobileNextCanvas" width="54" height="54"></canvas>
+    </div>
+    <div class="mh-block">
+        <div class="mh-label">ベスト</div>
+        <div class="mh-value" id="mBestEl">0</div>
+    </div>
+</div>
+
+<!-- ゲームオーバー -->
 <div id="overlay">
     <div class="modal">
         <h2>🍉 ゲームオーバー</h2>
@@ -158,7 +214,7 @@ body {
 <script>
 const { Engine, Bodies, World, Events } = Matter;
 
-// ── 定数 ─────────────────────────────────────────────────────
+// ── 定数（論理サイズ固定） ────────────────────────────────────
 const W = 400, H = 620;
 const WALL = 10;
 const DROP_Y = 45;
@@ -178,20 +234,67 @@ const FRUITS = [
     { name: 'スイカ',        emoji: '🍉', r: 100, color: '#16a085', score: 100 },
 ];
 
-// ── フルーツ一覧UI ─────────────────────────────────────────────
-const guide = document.getElementById('fruitGuide');
-FRUITS.forEach(f => {
-    guide.innerHTML += `
-        <div class="fruit-row">
-            <div class="fruit-dot" style="background:${f.color}"></div>
-            <span>${f.emoji} ${f.name}</span>
-            <span class="fruit-score">${f.score}pt</span>
-        </div>`;
-});
+// ── フルーツ一覧 ──────────────────────────────────────────────
+document.getElementById('fruitGuide').innerHTML = FRUITS.map(f =>
+    `<div class="fruit-row">
+        <div class="fruit-dot" style="background:${f.color}"></div>
+        <span>${f.emoji} ${f.name}</span>
+        <span class="fruit-score">${f.score}pt</span>
+    </div>`
+).join('');
+
+// ── レスポンシブ判定 ──────────────────────────────────────────
+const isMobile = () => window.innerWidth <= 600;
+
+// ── Canvas スケーリング ───────────────────────────────────────
+const canvas = document.getElementById('gameCanvas');
+const ctx    = canvas.getContext('2d');
+canvas.width  = W;
+canvas.height = H;
+
+function getHeaderH() {
+    if (!isMobile()) return 0;
+    return document.getElementById('mobileHeader').getBoundingClientRect().height || 72;
+}
+
+function applyCanvasScale() {
+    if (isMobile()) {
+        const safeTop = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--sat') || '0');
+        const headerH = getHeaderH();
+        const availW  = window.innerWidth;
+        const availH  = window.innerHeight - headerH;
+        const scale   = Math.min(availW / W, availH / H);
+        canvas.style.width  = W * scale + 'px';
+        canvas.style.height = H * scale + 'px';
+        canvas.style.marginTop = headerH + 'px';
+    } else {
+        canvas.style.width  = '';
+        canvas.style.height = '';
+        canvas.style.marginTop = '';
+    }
+}
+
+function applyLayout() {
+    const mobile = isMobile();
+    document.getElementById('desktopWrapper').style.display = mobile ? 'none' : 'flex';
+    document.getElementById('mobileHeader').style.display   = mobile ? 'flex' : 'none';
+
+    if (mobile) {
+        document.body.appendChild(canvas);
+        canvas.style.display = 'block';
+    } else {
+        document.getElementById('desktopWrapper').insertBefore(
+            canvas, document.getElementById('sidebar')
+        );
+    }
+    applyCanvasScale();
+}
+
+window.addEventListener('resize', () => { applyLayout(); });
 
 // ── State ─────────────────────────────────────────────────────
 let engine, world;
-let bodyMap = new Map();   // body.id -> { body, level, merging }
+let bodyMap = new Map();
 let score = 0;
 let best  = parseInt(localStorage.getItem('suika_best') || '0');
 let curLevel = 0, nextLevel = 0;
@@ -202,22 +305,14 @@ let dangerFrames = 0;
 let pendingMerges = [];
 let frameId;
 
-// ── Canvas ────────────────────────────────────────────────────
-const canvas = document.getElementById('gameCanvas');
-const ctx    = canvas.getContext('2d');
-canvas.width  = W;
-canvas.height = H;
-
 // ── Engine ────────────────────────────────────────────────────
 function createEngine() {
     engine = Engine.create({ gravity: { y: 2 } });
     world  = engine.world;
-
-    // 物理壁: 内側エッジが x=WALL, x=W-WALL, y=H-WALL
     const walls = [
-        Bodies.rectangle(WALL / 2,     H / 2,          WALL, H * 2, { isStatic: true, label: 'wall', friction: 0.5 }),
-        Bodies.rectangle(W - WALL / 2, H / 2,          WALL, H * 2, { isStatic: true, label: 'wall', friction: 0.5 }),
-        Bodies.rectangle(W / 2,        H - WALL / 2,   W,    WALL,  { isStatic: true, label: 'wall', friction: 0.5 }),
+        Bodies.rectangle(WALL/2,     H/2,       WALL, H*2, { isStatic:true, label:'wall', friction:0.5 }),
+        Bodies.rectangle(W-WALL/2,   H/2,       WALL, H*2, { isStatic:true, label:'wall', friction:0.5 }),
+        Bodies.rectangle(W/2,        H-WALL/2,  W,    WALL, { isStatic:true, label:'wall', friction:0.5 }),
     ];
     World.add(world, walls);
     Events.on(engine, 'collisionStart', onCollision);
@@ -241,13 +336,11 @@ function processMerges() {
     for (const [a, b] of batch) {
         const mx = (a.body.position.x + b.body.position.x) / 2;
         const my = (a.body.position.y + b.body.position.y) / 2;
-        World.remove(world, a.body);
-        World.remove(world, b.body);
-        bodyMap.delete(a.body.id);
-        bodyMap.delete(b.body.id);
-        const newLevel = a.level + 1;
-        spawnFruit(mx, my, newLevel);
-        addScore(FRUITS[newLevel].score);
+        World.remove(world, a.body); bodyMap.delete(a.body.id);
+        World.remove(world, b.body); bodyMap.delete(b.body.id);
+        const nl = a.level + 1;
+        spawnFruit(mx, my, nl);
+        addScore(FRUITS[nl].score);
     }
 }
 
@@ -255,11 +348,8 @@ function processMerges() {
 function spawnFruit(x, y, level) {
     const fr   = FRUITS[level];
     const body = Bodies.circle(x, y, fr.r, {
-        restitution: 0.25,
-        friction: 0.5,
-        frictionAir: 0.008,
-        density: 0.002,
-        label: 'fruit',
+        restitution: 0.25, friction: 0.5, frictionAir: 0.008,
+        density: 0.002, label: 'fruit',
     });
     bodyMap.set(body.id, { body, level, merging: false });
     World.add(world, body);
@@ -269,7 +359,7 @@ function spawnFruit(x, y, level) {
 function dropFruit() {
     if (!canDrop || isGameOver) return;
     const fr = FRUITS[curLevel];
-    const x  = Math.max(WALL + fr.r + 1, Math.min(W - WALL - fr.r - 1, dropX));
+    const x  = Math.max(WALL+fr.r+1, Math.min(W-WALL-fr.r-1, dropX));
     spawnFruit(x, DROP_Y, curLevel);
     canDrop   = false;
     curLevel  = nextLevel;
@@ -283,11 +373,15 @@ function randLevel() { return Math.floor(Math.random() * 5); }
 // ── Score ─────────────────────────────────────────────────────
 function addScore(n) {
     score += n;
-    document.getElementById('scoreEl').textContent = score.toLocaleString();
+    const s = score.toLocaleString();
+    document.getElementById('scoreEl').textContent = s;
+    document.getElementById('mScoreEl').textContent = s;
     if (score > best) {
         best = score;
         localStorage.setItem('suika_best', best);
-        document.getElementById('bestEl').textContent = best.toLocaleString();
+        const b = best.toLocaleString();
+        document.getElementById('bestEl').textContent  = b;
+        document.getElementById('mBestEl').textContent = b;
     }
 }
 
@@ -297,19 +391,12 @@ function checkGameOver() {
     let danger = false;
     for (const [, { body, merging }] of bodyMap) {
         if (merging) continue;
-        const vy = Math.abs(body.velocity.y);
-        const vx = Math.abs(body.velocity.x);
-        if (body.position.y < DANGER_Y && vy < 1 && vx < 1) {
-            danger = true;
-            break;
-        }
+        if (body.position.y < DANGER_Y &&
+            Math.abs(body.velocity.y) < 1 &&
+            Math.abs(body.velocity.x) < 1) { danger = true; break; }
     }
-    if (danger) {
-        dangerFrames++;
-        if (dangerFrames > 90) triggerGameOver();
-    } else {
-        dangerFrames = 0;
-    }
+    dangerFrames = danger ? dangerFrames + 1 : 0;
+    if (dangerFrames > 90) triggerGameOver();
 }
 
 function triggerGameOver() {
@@ -322,20 +409,13 @@ function triggerGameOver() {
 function restart() {
     cancelAnimationFrame(frameId);
     Events.off(engine, 'collisionStart');
-    World.clear(world);
-    Engine.clear(engine);
-
-    bodyMap.clear();
-    pendingMerges = [];
-    score = 0;
-    isGameOver = false;
-    dangerFrames = 0;
-    canDrop = true;
-    dropX = W / 2;
-
-    document.getElementById('scoreEl').textContent = '0';
+    World.clear(world); Engine.clear(engine);
+    bodyMap.clear(); pendingMerges = [];
+    score = 0; isGameOver = false; dangerFrames = 0;
+    canDrop = true; dropX = W / 2;
+    document.getElementById('scoreEl').textContent  = '0';
+    document.getElementById('mScoreEl').textContent = '0';
     document.getElementById('overlay').classList.remove('show');
-
     createEngine();
     curLevel  = randLevel();
     nextLevel = randLevel();
@@ -344,163 +424,104 @@ function restart() {
 }
 
 // ── Draw ──────────────────────────────────────────────────────
-function drawFruit(x, y, angle, level, alpha) {
-    const fr = FRUITS[level];
-    ctx.save();
-    if (alpha !== undefined) ctx.globalAlpha = alpha;
-    ctx.translate(x, y);
-    ctx.rotate(angle);
-
-    // 円
-    ctx.beginPath();
-    ctx.arc(0, 0, fr.r, 0, Math.PI * 2);
-    const grad = ctx.createRadialGradient(-fr.r * 0.3, -fr.r * 0.3, fr.r * 0.1, 0, 0, fr.r);
-    grad.addColorStop(0, lighten(fr.color, 40));
-    grad.addColorStop(1, fr.color);
-    ctx.fillStyle = grad;
-    ctx.fill();
-    ctx.strokeStyle = 'rgba(0,0,0,0.12)';
-    ctx.lineWidth = 1.5;
-    ctx.stroke();
-
-    // 絵文字
-    const sz = fr.r * 1.25;
-    ctx.font = `${sz}px serif`;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(fr.emoji, 0, 2);
-
-    ctx.restore();
-}
-
 function lighten(hex, amt) {
-    const num = parseInt(hex.replace('#', ''), 16);
-    const r = Math.min(255, (num >> 16) + amt);
-    const g = Math.min(255, ((num >> 8) & 0xff) + amt);
-    const b = Math.min(255, (num & 0xff) + amt);
+    const n = parseInt(hex.replace('#',''), 16);
+    const r = Math.min(255,(n>>16)+amt), g = Math.min(255,((n>>8)&0xff)+amt), b = Math.min(255,(n&0xff)+amt);
     return `rgb(${r},${g},${b})`;
 }
 
-function draw() {
-    // 背景
-    ctx.fillStyle = '#fdf6e3';
-    ctx.fillRect(0, 0, W, H);
-
-    // 上部領域（ドロップゾーン）を少し暗く
-    ctx.fillStyle = 'rgba(0,0,0,0.04)';
-    ctx.fillRect(WALL, 0, W - WALL * 2, DANGER_Y);
-
-    // デンジャーライン
+function drawFruit(x, y, angle, level, alpha) {
+    const fr = FRUITS[level];
     ctx.save();
-    ctx.setLineDash([7, 5]);
-    ctx.strokeStyle = 'rgba(231,76,60,0.5)';
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(WALL, DANGER_Y);
-    ctx.lineTo(W - WALL, DANGER_Y);
-    ctx.stroke();
-    ctx.setLineDash([]);
+    if (alpha != null) ctx.globalAlpha = alpha;
+    ctx.translate(x, y); ctx.rotate(angle);
+    ctx.beginPath(); ctx.arc(0, 0, fr.r, 0, Math.PI*2);
+    const g = ctx.createRadialGradient(-fr.r*.3,-fr.r*.3,fr.r*.1,0,0,fr.r);
+    g.addColorStop(0, lighten(fr.color,40)); g.addColorStop(1, fr.color);
+    ctx.fillStyle = g; ctx.fill();
+    ctx.strokeStyle = 'rgba(0,0,0,0.12)'; ctx.lineWidth = 1.5; ctx.stroke();
+    ctx.font = `${fr.r*1.25}px serif`;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(fr.emoji, 0, 2);
     ctx.restore();
+}
 
-    // フルーツ描画
-    for (const [, { body, level }] of bodyMap) {
-        drawFruit(body.position.x, body.position.y, body.angle, level);
-    }
-
-    // ドロップガイド
+function draw() {
+    ctx.fillStyle = '#fdf6e3'; ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = 'rgba(0,0,0,0.04)'; ctx.fillRect(WALL, 0, W-WALL*2, DANGER_Y);
+    ctx.save(); ctx.setLineDash([7,5]);
+    ctx.strokeStyle = 'rgba(231,76,60,0.5)'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(WALL,DANGER_Y); ctx.lineTo(W-WALL,DANGER_Y); ctx.stroke();
+    ctx.restore();
+    for (const [,{body,level}] of bodyMap) drawFruit(body.position.x, body.position.y, body.angle, level);
     if (canDrop && !isGameOver) {
         const fr = FRUITS[curLevel];
-        const cx = Math.max(WALL + fr.r + 1, Math.min(W - WALL - fr.r - 1, dropX));
-
-        // ガイドライン
-        ctx.save();
-        ctx.setLineDash([4, 7]);
-        ctx.strokeStyle = 'rgba(0,0,0,0.18)';
-        ctx.lineWidth = 1;
-        ctx.beginPath();
-        ctx.moveTo(cx, DANGER_Y);
-        ctx.lineTo(cx, H - WALL);
-        ctx.stroke();
+        const cx = Math.max(WALL+fr.r+1, Math.min(W-WALL-fr.r-1, dropX));
+        ctx.save(); ctx.setLineDash([4,7]);
+        ctx.strokeStyle='rgba(0,0,0,0.18)'; ctx.lineWidth=1;
+        ctx.beginPath(); ctx.moveTo(cx,DANGER_Y); ctx.lineTo(cx,H-WALL); ctx.stroke();
         ctx.restore();
-
-        // ゴーストフルーツ
         drawFruit(cx, DROP_Y, 0, curLevel, 0.6);
     }
-
-    // 壁（visual）
-    const wallGrad = ctx.createLinearGradient(0, 0, WALL, 0);
-    wallGrad.addColorStop(0, '#7a5c2e');
-    wallGrad.addColorStop(1, '#a07840');
-    ctx.fillStyle = wallGrad;
-    ctx.fillRect(0, DANGER_Y, WALL, H - DANGER_Y);
-    ctx.fillRect(W - WALL, DANGER_Y, WALL, H - DANGER_Y);
-    ctx.fillRect(0, H - WALL, W, WALL);
-
-    // 壁の光沢
-    ctx.fillStyle = 'rgba(255,255,255,0.12)';
-    ctx.fillRect(WALL - 2, DANGER_Y, 2, H - DANGER_Y);
-    ctx.fillRect(W - WALL, DANGER_Y, 2, H - DANGER_Y);
+    const wg = ctx.createLinearGradient(0,0,WALL,0);
+    wg.addColorStop(0,'#7a5c2e'); wg.addColorStop(1,'#a07840');
+    ctx.fillStyle = wg;
+    ctx.fillRect(0,DANGER_Y,WALL,H-DANGER_Y);
+    ctx.fillRect(W-WALL,DANGER_Y,WALL,H-DANGER_Y);
+    ctx.fillRect(0,H-WALL,W,WALL);
 }
 
 function renderNextFruit() {
-    const nc   = document.getElementById('nextCanvas');
-    const nctx = nc.getContext('2d');
-    nctx.clearRect(0, 0, 130, 130);
-    const fr = FRUITS[nextLevel];
-    const r  = Math.min(fr.r, 50);
-
-    const grad = nctx.createRadialGradient(65 - r * 0.3, 65 - r * 0.3, r * 0.1, 65, 65, r);
-    grad.addColorStop(0, lighten(fr.color, 40));
-    grad.addColorStop(1, fr.color);
-    nctx.beginPath();
-    nctx.arc(65, 65, r, 0, Math.PI * 2);
-    nctx.fillStyle = grad;
-    nctx.fill();
-
-    nctx.font = `${r * 1.25}px serif`;
-    nctx.textAlign = 'center';
-    nctx.textBaseline = 'middle';
-    nctx.fillText(fr.emoji, 65, 67);
-
-    nctx.font = '12px sans-serif';
-    nctx.fillStyle = 'rgba(255,255,255,0.55)';
-    nctx.fillText(fr.name, 65, 65 + r + 14);
+    [
+        { el: 'nextCanvas',       size: 130, cx: 65, r: 48 },
+        { el: 'mobileNextCanvas', size: 54,  cx: 27, r: 20 },
+    ].forEach(({ el, cx, r: maxR }) => {
+        const nc   = document.getElementById(el);
+        const nctx = nc.getContext('2d');
+        const sz   = nc.width;
+        nctx.clearRect(0, 0, sz, sz);
+        const fr = FRUITS[nextLevel];
+        const r  = Math.min(fr.r, maxR);
+        const g  = nctx.createRadialGradient(cx-r*.3, cx-r*.3, r*.1, cx, cx, r);
+        g.addColorStop(0, lighten(fr.color, 40)); g.addColorStop(1, fr.color);
+        nctx.beginPath(); nctx.arc(cx, cx, r, 0, Math.PI*2);
+        nctx.fillStyle = g; nctx.fill();
+        nctx.font = `${r*1.25}px serif`;
+        nctx.textAlign = 'center'; nctx.textBaseline = 'middle';
+        nctx.fillText(fr.emoji, cx, cx+2);
+    });
 }
 
 // ── Loop ──────────────────────────────────────────────────────
 function loop() {
-    Engine.update(engine, 1000 / 60);
-    processMerges();
-    checkGameOver();
-    draw();
+    Engine.update(engine, 1000/60);
+    processMerges(); checkGameOver(); draw();
     frameId = requestAnimationFrame(loop);
 }
 
 // ── Input ─────────────────────────────────────────────────────
 function updateDropX(clientX) {
-    const rect   = canvas.getBoundingClientRect();
-    const scaleX = W / rect.width;
-    dropX = (clientX - rect.left) * scaleX;
+    const rect = canvas.getBoundingClientRect();
+    dropX = (clientX - rect.left) * (W / rect.width);
 }
-
 canvas.addEventListener('mousemove', e => updateDropX(e.clientX));
-canvas.addEventListener('click',     () => dropFruit());
-canvas.addEventListener('touchmove', e => { e.preventDefault(); updateDropX(e.touches[0].clientX); }, { passive: false });
+canvas.addEventListener('click', () => dropFruit());
+canvas.addEventListener('touchmove', e => { e.preventDefault(); updateDropX(e.touches[0].clientX); }, { passive:false });
 canvas.addEventListener('touchend',  e => { e.preventDefault(); dropFruit(); });
+document.addEventListener('keydown', e => {
+    if (e.code==='Space'||e.code==='Enter') { e.preventDefault(); dropFruit(); }
+    if (e.code==='ArrowLeft')  dropX = Math.max(WALL+FRUITS[curLevel].r, dropX-8);
+    if (e.code==='ArrowRight') dropX = Math.min(W-WALL-FRUITS[curLevel].r, dropX+8);
+});
 document.getElementById('restartBtn').addEventListener('click', restart);
 
-// スペースキー / エンターでドロップ
-document.addEventListener('keydown', e => {
-    if (e.code === 'Space' || e.code === 'Enter') { e.preventDefault(); dropFruit(); }
-    if (e.code === 'ArrowLeft')  dropX = Math.max(WALL + FRUITS[curLevel].r, dropX - 8);
-    if (e.code === 'ArrowRight') dropX = Math.min(W - WALL - FRUITS[curLevel].r, dropX + 8);
-});
-
 // ── Boot ──────────────────────────────────────────────────────
-document.getElementById('bestEl').textContent = best.toLocaleString();
+document.getElementById('bestEl').textContent  = best.toLocaleString();
+document.getElementById('mBestEl').textContent = best.toLocaleString();
 createEngine();
 curLevel  = randLevel();
 nextLevel = randLevel();
+applyLayout();
 renderNextFruit();
 loop();
 </script>
